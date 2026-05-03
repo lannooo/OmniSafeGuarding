@@ -1,0 +1,36 @@
+# Format: [method] repo_id -> local_subdir
+# method: hf (default) | hfd | skip
+#   hfd requires hfd.sh in the same directory
+#   skip means this dataset line will be ignored
+[hf] HuggingFaceH4/mt_bench_prompts -> mt_bench_prompts
+[hf] domenicrosati/TruthfulQA -> TruthfulQA
+[hf] nvidia/Aegis-AI-Content-Safety-Dataset-2.0 -> Aegis-2.0
+[hf] PKU-Alignment/BeaverTails -> BeaverTails
+[hf] PKU-Alignment/PKU-SafeRLHF-QA -> PKU-SafeRLHF-QA
+[hf] Bertievidgen/SimpleSafetyTests -> SimpleSafetyTests
+[hf] mmathys/openai-moderation-api-evaluation -> openaiMod
+[hf] Paul/XSTest -> XSTest
+[hf] lmsys/toxic-chat -> toxic-chat
+[hf] PKU-Alignment/MM-SafetyBench -> MM-SafetyBench
+[hf] MBZUAI/AudioJailbreak -> AudioJailbreak
+[hf] Zonghao2025/safebench -> safebench
+[hf] Leyiii/Omni-SafetyBench -> Omni-SafetyBench
+[hf] lmms-lab/MME -> MME
+[hf] opencompass/MMBench-Video -> MMBench-Video
+[hf] lmms-lab/OK-VQA -> OK-VQA
+[hf] lmms-lab/llava-bench-in-the-wild -> llava-bench-in-the-wild
+[hf] whyu/mm-vet -> mm-vet
+[hf] whyu/mm-vet-v2 -> mm-vet-v2
+[hf] hlt-lab/voicebench -> voicebench
+[hf] Foreshhh/vlsbench -> vlsbench
+[hf] ys-zong/VLGuard -> VLGuard
+[hf] sinwang/SIUO -> SIUO
+[hf] etri-vilab/holisafe-bench -> HoliSafe
+[hf] Monosail/HADES -> Hades
+[hf] MMInstruction/RedTeamingVLM -> RedTeamingVLM
+[hf] BAAI/Video-SafetyBench -> Video-SafetyBench
+[skip] allenai/wildguardmix -> wildguard
+[skip] walledai/HarmBench -> HarmBench
+[skip] walledai/AdvBench -> AdvBench
+[skip] JailbreakV-28K/JailBreakV-28k -> JailBreakV-28k
+[skip] Virtue-AI-HUB/SafeWatch-Bench -> SafeWatch-Bench
