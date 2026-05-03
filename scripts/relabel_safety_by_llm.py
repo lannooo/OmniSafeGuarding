@@ -108,14 +108,14 @@ if __name__ == '__main__':
 
     if args.llm == 'deepseek':
         deepseek_client = OpenAI(
-            api_key='sk-e565ae25b85b4e21a18bcff09e6bf37b',
+            api_key='your-api-key',
             base_url="https://api.deepseek.com")
         call_fn = call_deepseek 
     elif args.llm == 'seed':
         from volcenginesdkarkruntime import Ark
         seed_client = Ark(
             base_url="https://ark.cn-beijing.volces.com/api/v3",
-            api_key='bf543c79-d27e-4081-b8d5-745461250603',
+            api_key='your-api-key',
         )
         call_fn = call_seed 
     elif args.llm == 'qwen':
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     elif args.llm == 'mistral':
         from mistralai import Mistral
         mistral_client = Mistral(
-            api_key='wEHYGjqOA67eXAUdbFVvLQOd0XjPc39l',
+            api_key='your-api-key',
         )
         call_fn = call_mistral
     else:

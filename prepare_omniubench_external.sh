@@ -288,20 +288,32 @@ prepare_safewatch_bench_mini() {
 
 prepare_omnicustom_bench_mini() {
   local target_dir="${DATA_DIR}/Omniguard_Custom"
-  local zip_path="${EXTERNAL_DIR}/Omniguard_Custom_mini.zip"
+  local full_zip_path="${EXTERNAL_DIR}/Omni_Custom.zip"
+  local mini_zip_path="${EXTERNAL_DIR}/Omniguard_Custom_mini.zip"
 
-  echo "[INFO] Preparing OmniCustom (mini) ..."
+  echo "[INFO] Preparing OmniCustom ..."
 
-  if [[ ! -f "${zip_path}" ]]; then
-    echo "[ERROR] OmniCustom (mini) preparation failed:"
-    echo "[ERROR]   - Zip not found: ${zip_path}"
-    echo "[ERROR] Please provide Omniguard_Custom_mini.zip in ${EXTERNAL_DIR}/."
-    return 1
+  if [[ -f "${full_zip_path}" ]]; then
+    echo "[INFO] Found ${full_zip_path}, extracting full dataset ..."
+    mkdir -p "${target_dir}"
+    unzip -q "${full_zip_path}" -d "${target_dir}"
+    echo "[INFO] Extracted OmniCustom (full) to ${target_dir}"
+    return 0
   fi
 
-  mkdir -p "${target_dir}"
-  unzip -q "${zip_path}" -d "${target_dir}"
-  echo "[INFO] Extracted OmniCustom (mini) to ${target_dir}"
+  if [[ -f "${mini_zip_path}" ]]; then
+    echo "[INFO] Full dataset zip not found. Falling back to mini package: ${mini_zip_path}"
+    mkdir -p "${target_dir}"
+    unzip -q "${mini_zip_path}" -d "${target_dir}"
+    echo "[INFO] Extracted OmniCustom (mini) to ${target_dir}"
+    return 0
+  fi
+
+  echo "[ERROR] OmniCustom preparation failed:"
+  echo "[ERROR]   - Full zip not found: ${full_zip_path}"
+  echo "[ERROR]   - Mini zip not found: ${mini_zip_path}"
+  echo "[ERROR] Please provide Omni_Custom.zip (preferred) or Omniguard_Custom_mini.zip in ${EXTERNAL_DIR}/."
+  return 1
 }
 
 

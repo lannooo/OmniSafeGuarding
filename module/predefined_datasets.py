@@ -223,11 +223,11 @@ train_multimodal_v3 = DatasetConfigs([
 
 # ----------------Evaluation By Functions ----------------
 eval_fast_validate = DatasetConfigs([
-    # Splitable(TextModality.mtbench),
+    Splitable(TextModality.mtbench),
     Splitable(TextModality.simplesafety),
-    # Splitable(VisionModality.mm_vet_v2),
+    Splitable(VisionModality.mm_vet_v2),
     Splitable(VisionModality.figstep),
-    # Splitable(AudioModality.aiah_alignment),
+    Splitable(AudioModality.aiah_alignment),
 ])
 
 eval_general = DatasetConfigs([
@@ -238,7 +238,7 @@ eval_general = DatasetConfigs([
 ])
 
 eval_basic_safety = DatasetConfigs([
-    Splitable(TextModality.jbv_redteam_2k),
+    # Splitable(TextModality.jbv_redteam_2k),
     Splitable(TextModality.beavertails_30k_test),
     Splitable(TextModality.aegis2_test),
     Splitable(TextModality.openai_moderation),
@@ -263,9 +263,9 @@ eval_ext_jailbreaks = DatasetConfigs([
     Splitable(TextModality.cipherchat),
 
     Splitable(VisionModality.mm_safetybench),
-    Splitable(VisionModality.jbv_jailbreak_mini),
+    # Splitable(VisionModality.jbv_jailbreak_mini),
     Splitable(VisionModality.figstep),
-    Splitable(VisionModality.mml_hades),
+    # Splitable(VisionModality.mml_hades),
 
     Splitable(AudioModality.omni_safetybench_dual_ta),
     Splitable(AudioModality.ajailbench),

@@ -54,6 +54,13 @@ This step fetch data from github repo, and extracts local packaged datasets (as 
 bash prepare_omniubench_external.sh
 ```
 
+The following mini datasets may be missing in anonymous repo releases, 
+(too large and are managed via Git LFS). They are disabled in default evaluation configs; after preparing local data, uncomment related eval sets.:
+- `data/external/JailBreakV-28k-mini.zip`
+- `data/external/MML-SafeBench.zip`
+- `data/external/Omniguard_Custom_mini.zip`: download from anonymous Zenodo (https://zenodo.org/records/19999112) and place under `data/external/`
+
+
 For dataset-specific issues and access reminders (HF terms/login), see [BENCHMARKS.md](BENCHMARKS.md).
 
 
@@ -164,17 +171,30 @@ This produces prediction outputs and logs that can be used for metric calculatio
 
 ### Path 2: Reproduce Directly from Intermediate Results
 
-Use this path when you want fast metric verification without rerunning all model inference.
+Use this path when you want quick metric verification without rerunning all model inference.
 
 - Reuse released intermediate outputs in `output/`
-- Run the metric calculation program/notebook to regenerate final metrics
+- Intermediate results are stored in `output/experiments/<model_name>/`
+- Open `metrics_report.ipynb` and modify three selections in the main comparison cell:
 
-Suggested entry points:
+```python
+# Step1: select models above to compare
+select_models = qwen3_30B_guards
 
-- `metrics_report.ipynb`
-- scripts in `output/metric.logs/` (if provided for your experiment setting)
+# Step2: select evaluate dimention
+## [General]: benign queries (utility)
+## [Safety]: harmful queries (safety)
+## [Jailbreak]: jailbreak queries (safety)
+## [FalseReject]: false reject queries, constructed with specific benign text-patterns and benign image/audio/video (reliability)
+## [ModalityBias]: queries with only one modality showing harmful, while the other modality(ies) showing benign (reliability)
+dimension = "Safety"
 
-This path is recommended for quick reviewer verification.
+# Step3: select modalities to compare: "Text", "Image", "Audio", "Video"
+modalities = ["Image"]
+```
+
+- Run the notebook cell to regenerate metric tables from intermediate outputs.
+
 
 ## Benchmarking Other Baselines
 

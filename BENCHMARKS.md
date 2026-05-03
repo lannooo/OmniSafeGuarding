@@ -167,6 +167,17 @@ After downloading `BAAI/Video-SafetyBench`, the HF preparation script automatica
 
 Datasets not available on Hugging Face are prepared via `prepare_omniubench_data_external.sh`.
 
+### Access + Evaluation Reminder (Important)
+
+The following packages are provided in mini/partial form for quick runs, while full datasets must be downloaded separately:
+
+- `data/external/JailBreakV-28k-mini.zip` (full dataset: https://huggingface.co/datasets/JailbreakV-28K/JailBreakV-28k)
+- `data/external/MML-SafeBench.zip` (full dataset access/apply: https://github.com/wangyu-ovo/MML)
+- `data/external/Omniguard_Custom_mini.zip` (download from anonymous Zenodo: https://zenodo.org/records/19999112; place under `data/external/`)
+
+Because these subsets/media are large and typically require Git LFS, they may be unavailable in some anonymous repo snapshots.
+For this reason, related benchmarks are commented out in default evaluation configs. After you prepare these datasets locally, uncomment the corresponding eval entries.
+
 ### JailBreakV-28k (Mini Package)
 
 For quick evaluation, this repository provides a mini package:
