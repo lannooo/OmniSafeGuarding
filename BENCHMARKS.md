@@ -248,9 +248,16 @@ For quick evaluation, this repository provides a mini package:
 
 This mini package is a subset and does not include the full dataset.
 
+
 ### Omniguard_Custom
 
-Place `Omni_Custom.zip` in `data/external/` and run the script. It will extract to `data/Omniguard_Custom`.
+This repository includes a mini Omniguard_Custom dataset for quick evaluation.
+
+You can also download the full Omniguard_Custom dataset anonymously from Zenodo:
+
+**[Download Omniguard_Custom from Zenodo](https://zenodo.org/records/19999112)**
+
+Or generate by your own, see `scripts/generate_omni_custom_quard.py`.
 
 ### AIAH
 

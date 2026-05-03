@@ -286,23 +286,25 @@ prepare_safewatch_bench_mini() {
   echo "[INFO] Extracted SafeWatch-Bench (mini) to ${target_dir}"
 }
 
-prepare_omniguard_custom() {
+prepare_omnicustom_bench_mini() {
   local target_dir="${DATA_DIR}/Omniguard_Custom"
-  local zip_path="${EXTERNAL_DIR}/Omni_Custom.zip"
+  local zip_path="${EXTERNAL_DIR}/Omniguard_Custom_mini.zip"
 
-  echo "[INFO] Preparing Omniguard_Custom ..."
+  echo "[INFO] Preparing OmniCustom (mini) ..."
 
   if [[ ! -f "${zip_path}" ]]; then
-    echo "[ERROR] Omniguard_Custom preparation failed:"
+    echo "[ERROR] OmniCustom (mini) preparation failed:"
     echo "[ERROR]   - Zip not found: ${zip_path}"
-    echo "[ERROR] Please provide Omni_Custom.zip in ${EXTERNAL_DIR}/."
+    echo "[ERROR] Please provide Omniguard_Custom_mini.zip in ${EXTERNAL_DIR}/."
     return 1
   fi
 
   mkdir -p "${target_dir}"
   unzip -q "${zip_path}" -d "${target_dir}"
-  echo "[INFO] Extracted Omniguard_Custom to ${target_dir}"
+  echo "[INFO] Extracted OmniCustom (mini) to ${target_dir}"
 }
+
+
 
 extract_labels_in_place() {
   local zip_path="${EXTERNAL_DIR}/labels.zip"
@@ -332,10 +334,10 @@ prepare_wildguard
 prepare_figstep
 prepare_mml_safebench
 prepare_safewatch_bench_mini
-prepare_omniguard_custom
+prepare_omnicustom_bench_mini
 
 echo "[INFO] External datasets are prepared."
 
-extract_labels_in_place
+# extract_labels_in_place
 
 echo "[INFO] Labels resources are prepared."

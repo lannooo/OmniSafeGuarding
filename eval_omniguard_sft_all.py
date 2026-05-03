@@ -54,7 +54,8 @@ if __name__ == '__main__':
         # "jailbk": eval_ext_jailbreaks,
 
         # For modality-bias evaluation
-        # "mb": eval_custom_modality,
+        # Note that this dataset contains only a subset, we provide a anyonmous download link in the README for full download 
+        # "mb": eval_custom_modality, 
 
         # For False-Rejection to text short-cuts
         # "fr": eval_false_reject,
