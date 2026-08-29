@@ -20,7 +20,9 @@ MODEL_REPOS=(
   "meta-llama/Llama-Guard-3-11B-Vision",
   "AIML-TUDA/LlavaGuard-v1.2-7B-OV-hf",
   "yueliu1999/GuardReasoner-VL-7B"
-  "zhu-thu-22/GuardReasoner-Omni-4B",
+  "zhu-thu-22/GuardReasoner-Omni-3B",
+  "zhu-thu-22/GuardReasoner-Omni-7B",
+  "anonymousICML/OmniGuard-3B",
   "anonymousICML/OmniGuard-7B",
 )
 

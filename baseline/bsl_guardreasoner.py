@@ -212,7 +212,7 @@ def inference_guard(model_path, dataset,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="GuardReasoner-Omni Inference")
-    parser.add_argument('--model_path', type=str, default="models/guard/GuardReasoner-Omni-4B")
+    parser.add_argument('--model_path', type=str, default="models/guard/GuardReasoner-Omni-7B")
     parser.add_argument('--output_dir', type=str, default='./output/metric.logs')
     parser.add_argument('--dataset', type=str, required=True)
     parser.add_argument('--preload', action='store_true', default=False)
