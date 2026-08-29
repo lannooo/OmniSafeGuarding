@@ -438,14 +438,30 @@ def hf_load_cipherchat():
             if line.strip():
                 ds.append(json.loads(line))
     unsafe_set = []
+    def infer_cipher_type(jailbreak_prompt:str):
+        detect_prompt = jailbreak_prompt[:100].removeprefix('You are an expert on The ')
+        if detect_prompt[0] == 'C':
+            if detect_prompt[1] == 'a':
+                return 'Caesar'
+            elif detect_prompt[1] == 'i':
+                return 'Cipher'
+            else:
+                raise ValueError(f"Unknown cipher type: {detect_prompt}")
+        if detect_prompt[0] == 'M':
+            return 'Morse'
+        if detect_prompt[0] == 'A':
+            return 'ASCII'
+        raise ValueError(f"Unknown cipher type: {detect_prompt}")
     for item in ds:
         prompt = item['jailbreak_prompt']
+        cipher_type = infer_cipher_type(prompt)
         query = item['query']
         encoded_query = item['encoded_query']
         unsafe_set.append({
             "txt": prompt.format(encoded_query=encoded_query),
             "toxicity": PROMPT_UNSAFE,
             "risk": Const.CTRL_RELABEL,
+            'format': cipher_type,
             "request_key": query
         })
     print(f"Loading CipherChat dataset (Base Advbench), total sample size: {len(unsafe_set)}")
@@ -597,6 +613,7 @@ def hf_load_SaladBench(subset='base_set'):
                 "txt": item["question"],
                 "toxicity": PROMPT_UNSAFE,
                 "risk": item["3-category"],
+                'subset': 'base',
                 "request_key": item["question"]
             })
         elif subset == 'attack_enhanced_set':
@@ -604,6 +621,7 @@ def hf_load_SaladBench(subset='base_set'):
                 "txt": item["augq"],
                 "toxicity": PROMPT_UNSAFE,
                 "risk": item["3-category"],
+                'subset': 'enhance',
                 'requst_key': item['baseq']
             })
     print(f"Loading Salad-Bench dataset, total sample size: {len(unsafe_dataset)}")
@@ -652,6 +670,7 @@ def hf_load_ForbiddenQuestion_DAN(question_only=False):
                 "txt": f"{row['prompt']}\n{row['question']}",
                 "toxicity": PROMPT_UNSAFE,
                 "risk": row['content_policy_name'],
+                'subset': 'DAN',
                 "request_key": row['question']
             })
     else:
@@ -662,6 +681,7 @@ def hf_load_ForbiddenQuestion_DAN(question_only=False):
                     "txt": row['question'],
                     "toxicity": PROMPT_UNSAFE,
                     "risk": row['content_policy_name'],
+                    'subset': 'base',
                     "request_key": row['question']
                 })
                 question_set.add(row['question'])
@@ -681,6 +701,7 @@ def hf_load_HarmBench(subset='standard', no_context=False):
                 "txt": item["prompt"],
                 "toxicity": PROMPT_UNSAFE,
                 'risk': item['category'],
+                'subset': subset,
                 'request_key': item['prompt']
             })
         elif subset == 'contextual':
@@ -689,6 +710,7 @@ def hf_load_HarmBench(subset='standard', no_context=False):
                 "txt": f"[Context]\n{item['context']}\n\n{item['prompt']}" if not no_context else item['prompt'],
                 "toxicity": PROMPT_UNSAFE,
                 'risk': item['category'],
+                'subset': subset,
                 'request_key': item['prompt']
             })
     print(f"Loading HarmBench dataset, total sample size: {len(dataset)}")
@@ -715,7 +737,8 @@ def hf_load_wildguard_mix(subset='wildguardtest', split='test', prompt_only=True
                 "txt": item["prompt"],
                 "toxicity": PROMPT_SAFE if item['prompt_harm_label'] == 'unharmful' else PROMPT_UNSAFE,
                 "risk": item['subcategory'],
-                "request_key": item["prompt"]
+                "request_key": item["prompt"],
+                "format": 'adv' if item['adversarial'] else ''
             })
     else:  # include response, then filter those items without response and response label
         ds = ds.filter(lambda x: x['response'] is not None and x['response_harm_label'] is not None)
@@ -725,6 +748,7 @@ def hf_load_wildguard_mix(subset='wildguardtest', split='test', prompt_only=True
                 "answer": item['response'],
                 "toxicity": PROMPT_SAFE if item['response_harm_label'] == 'unharmful' else PROMPT_UNSAFE,
                 "risk": item['subcategory'],
+                "format": 'adv' if item['adversarial'] else ''
                 # TODO
             })
     print(f"Loading WildGuard-Mix dataset {subset}/{split}, Prompt Only: {prompt_only}, Adversarial: {adversarial}, total sample size: {len(dataset)}")
@@ -849,6 +873,7 @@ def hf_load_mmbench(subset='en', split='dev'):
             "img": item["image"], # PIL.Image.Image type
             "toxicity": PROMPT_SAFE,
             "risk": Const.BENIGN,
+            'subset': subset,
             "image_path": image_path
         })
     print(f"Loading MMBench dataset, total sample size: {len(dataset)}")
@@ -1130,6 +1155,7 @@ def hf_load_mm_safetybench(subset=HF_MMSafetyBench_SUBSETS, split=['SD', 'TYPO',
                         "txt": item["question"],
                         "toxicity": PROMPT_UNSAFE,
                         "risk": sb,
+                        'format': sp.lower(),
                         "request_key": item['question']
                     })
             else:
@@ -1139,8 +1165,8 @@ def hf_load_mm_safetybench(subset=HF_MMSafetyBench_SUBSETS, split=['SD', 'TYPO',
                         "img": item["image"],  # PIL.Image.Image type
                         "toxicity": PROMPT_UNSAFE,
                         "risk": sb,
+                        "format": sp.lower(),
                         "request_key": ref_item['question'],
-                        "format": sp.lower()
                     }
                     data_info["image_path"] = f"{HF_MMSafetyBench_Dataset}/data/{sb}/images/{sp}_{item['id']}.{PIL_img_ext(item['image'])}"
                     unsafe_dataset.append(data_info)
@@ -1234,6 +1260,7 @@ def hf_load_hades():
             "img": item["image"], # PIL.Image.Image type
             "toxicity": PROMPT_UNSAFE,
             "risk": item['scenario'],
+            'format': category,
             "request_key": question
         })
     print(f"Loading Hades dataset, total sample size: {len(unsafe_set)}")
@@ -1266,8 +1293,9 @@ def hf_load_jailbreakv28k(subset="JailBreakV_28K", split='JailBreakV_28K', query
                 "img": img_path if include_img else None, 
                 "toxicity": PROMPT_UNSAFE,
                 "risk": item['policy'],
+                'subset': subset,
+                "format": item['format'].lower(), # {'Logic', 'Persuade', 'SD', 'SD_typo', 'Template', 'figstep', 'typo'}
                 "request_key": item['redteam_query'],
-                "format": item['format'].lower() # {'Logic', 'Persuade', 'SD', 'SD_typo', 'Template', 'figstep', 'typo'}
             })
     elif subset == 'RedTeam_2K':
         ds = load_dataset(HF_JailbreakV28K_Dataset, subset)[split]
@@ -1277,6 +1305,7 @@ def hf_load_jailbreakv28k(subset="JailBreakV_28K", split='JailBreakV_28K', query
                 "txt": item["question"],   # direct harmful query
                 "toxicity": PROMPT_UNSAFE,
                 "risk": item['policy'],
+                'subset': subset,
                 "request_key": item['question']
             })
     print(f"Loading JailBreakV_28K dataset: {subset} - {split} - {query} - {'fromLLM' if transfer_from_llm else 'MLLM'}, total sample size: {len(unsafe_set)}")
@@ -1342,6 +1371,7 @@ def hf_load_RedTeamingVLM():
                     "img": item["img"],    # PIL.Image.Image type
                     "toxicity": PROMPT_UNSAFE,
                     "risk": item['topic'],
+                    'subset': subset,
                     "request_key":  f"There is an image contains texts '{extra_infos[id]}'. {item['questions']}"
                 })
         else:
@@ -1351,6 +1381,7 @@ def hf_load_RedTeamingVLM():
                     "img": item["img"], # PIL.Image.Image type
                     "toxicity": PROMPT_UNSAFE,
                     "risk": item['topic'],
+                    'subset': subset
                     # TODO: cannot find a proper request_key
                     # "request_key": item['questions']
                 })
@@ -1423,6 +1454,8 @@ def hf_load_mml_safebench(subset:str, prompt_format:str):
                 "img": img_path,
                 "toxicity": PROMPT_UNSAFE,
                 "risk": risk_name,
+                'subset': subset,
+                'format': prompt_format,
                 "request_key": item["original_prompt"]
             })    
 
@@ -1482,6 +1515,7 @@ def hf_load_safewatch(subset='real'):
                     "video": video_path,
                     "toxicity": PROMPT_SAFE if is_safe else PROMPT_UNSAFE,
                     "risk": risk_category,
+                    'subset': subset,
                     "request_key": item['video_content'] if 'video_content' in item else None
                 })
     print(f"Loading SafeWatch dataset (subset: {subset}), total sample size: {len(dataset)}")
@@ -1528,6 +1562,7 @@ def hf_load_video_safetybench(subset:str):
             "video": video_path,
             "toxicity": PROMPT_UNSAFE,
             "risk": item['subcategory'],
+            'subset': subset,
             "request_key": item['harmful_intention']
         })
     print(f"Loading Video-Safetybench dataset (subset: {subset}), total sample size: {len(dataset)}")
@@ -1573,7 +1608,8 @@ def hf_load_Voicebench(subset='alpacaeval', mode='audio_prompt'):
                     continue
                 data_item = {
                     "toxicity": PROMPT_UNSAFE if subset == 'advbench' else PROMPT_SAFE,
-                    "risk": Const.CTRL_RELABEL if subset == 'advbench' else Const.BENIGN
+                    "risk": Const.CTRL_RELABEL if subset == 'advbench' else Const.BENIGN,
+                    'subset': subset,
                 }
                 if "audio" in mode:
                     data_item["audio"] = audio_path
@@ -1624,7 +1660,8 @@ def hf_load_AudioJailbreak(subset='Origin', split='origin', mode='text_audio'):
                 if sp == 'LLama_Omni': 
                     audio_path = audio_path.replace('.mp3', '.wav') # for LLama_Omni, the audio type is wav instead
 
-            if not (os.path.exists(audio_path) and os.path.isfile(audio_path)):
+            if audio_path == './data/AudioJailbreak/': # for speed up
+            # if not (os.path.exists(audio_path) and os.path.isfile(audio_path)):
                 print(f"[Warning] Audio not found: {audio_path}")
                 continue
             
@@ -1641,6 +1678,7 @@ def hf_load_AudioJailbreak(subset='Origin', split='origin', mode='text_audio'):
                 "audio": audio_prompt,
                 "toxicity": PROMPT_UNSAFE,
                 'risk': item["category"],
+                'subset': subset,
             }
             
             # TODO no complete goal to serve as request_key
@@ -1712,6 +1750,7 @@ def hf_load_AIAH(subset='safety_alignment', prompt_type='harmful_audio', noise_t
                 "audio": audio,
                 "toxicity": PROMPT_UNSAFE,
                 "risk": risk_type,
+                'subset': subset,
                 "request_key": harmful_query
             }
             unsafe_set.append(data_item)
@@ -1728,6 +1767,7 @@ def hf_load_AIAH(subset='safety_alignment', prompt_type='harmful_audio', noise_t
                 "audio": audio_path,
                 "toxicity": PROMPT_UNSAFE,
                 "risk": Const.CTRL_RELABEL,
+                'subset': subset,
                 "request_key": item["instruction"]
             }
             unsafe_set.append(data_item)
@@ -1769,6 +1809,7 @@ def hf_load_OmniSafetyBench(subset='dual-modal', modality='image-text'):
     unsafe_set = []
     meta_files = modalities_candidates[modality]
     for meta_file in meta_files:
+        format_str = meta_file.split('/')[-1].split('.')[0]
         meta_file = os.path.join(HF_OmniSafetyBench_Dataset, subset, meta_file)
         with open(meta_file, 'r') as f:
             data = [json.loads(line) for line in f]
@@ -1778,19 +1819,19 @@ def hf_load_OmniSafetyBench(subset='dual-modal', modality='image-text'):
                 txt_prompt = item["text"]
             if 'image' in modality:
                 img_prompt = os.path.join(HF_OmniSafetyBench_MM_Dir, item['image_path'])
-                if not os.path.exists(img_prompt):
-                    print(f"[Warning] Image not found: {img_prompt}")
-                    continue
+                # if not os.path.exists(img_prompt):
+                #     print(f"[Warning] Image not found: {img_prompt}")
+                #     continue
             if 'audio' in modality:
                 audio_prompt = os.path.join(HF_OmniSafetyBench_MM_Dir, item['audio_path'])
-                if not os.path.exists(audio_prompt):
-                    print(f"[Warning] Audio not found: {audio_prompt}")
-                    continue
+                # if not os.path.exists(audio_prompt):
+                #     print(f"[Warning] Audio not found: {audio_prompt}")
+                #     continue
             if 'video' in modality:
                 video_prompt = os.path.join(HF_OmniSafetyBench_MM_Dir, item['video_path'])
-                if not os.path.exists(video_prompt):
-                    print(f"[Warning] Video not found: {video_prompt}")
-                    continue
+                # if not os.path.exists(video_prompt):
+                #     print(f"[Warning] Video not found: {video_prompt}")
+                    # continue
             
             unsafe_set.append({
                 "txt": txt_prompt,
@@ -1799,6 +1840,7 @@ def hf_load_OmniSafetyBench(subset='dual-modal', modality='image-text'):
                 "video": video_prompt,
                 "toxicity": PROMPT_UNSAFE,
                 "risk": item['harmful_category'],
+                'format': format_str,
                 "request_key": item['corresponding_text'] if modality != 'text-only' else txt_prompt
             })
     print(f"Loading Omni-SafetyBench dataset (subset: {subset}, modality: {modality}), total sample size: {len(unsafe_set)}")
@@ -1831,13 +1873,13 @@ def hf_load_SafeBench(prompt_type='text_image_audio'):
         for i, txt in text_prompts.items():
             img_path = os.path.join(img_folder, f"{i}.png")
             audio_paths = [os.path.join(audio_folder, f"{i}.wav") for audio_folder in audio_folders]
-            if prompt_type != 'text':
-                if not os.path.exists(img_path):
-                    print(f"[Warning] Image not found: {img_path}")
-                    continue
-                if not all([os.path.exists(audio_path) for audio_path in audio_paths]):
-                    print(f"[Warning] Audio not found: {audio_paths}")
-                    continue
+            # if prompt_type != 'text':
+            #     if not os.path.exists(img_path):
+            #         print(f"[Warning] Image not found: {img_path}")
+            #         continue
+            #     if not all([os.path.exists(audio_path) for audio_path in audio_paths]):
+            #         print(f"[Warning] Audio not found: {audio_paths}")
+            #         continue
             if prompt_type == 'text':
                 unsafe_set.append({
                     "txt": txt,
@@ -1880,6 +1922,8 @@ def hf_load_SafeBench(prompt_type='text_image_audio'):
 
 HF_Custom_Dataset = {
     'v3': f'{DATA_DIR}/Omniguard_Custom/behavior_ext_dataset_v3.jsonl',
+    'v4': f'{DATA_DIR}/Omniguard_Custom/behavior_ext_dataset_v4.jsonl',
+    # 'v5': f'{DATA_DIR}/Omniguard_Custom/behavior_ext_dataset_v5.jsonl',
 }
 HF_Custom_Data_Dir = f"{DATA_DIR}/Omniguard_Custom"
 HF_Custom_Behavior_Pairs = f'{DATA_DIR}/Omniguard_Custom/behavior_pairs.jsonl'
@@ -2109,85 +2153,110 @@ safewatch_real = lambda: hf_load_safewatch(subset='real')
 safewatch_genai = lambda: hf_load_safewatch(subset='genai')
 
 # custom omni-data: v3
-# omni_custom_T = lambda: hf_load_omniguard_custom('T')
-omni_custom_T = lambda: hf_load_omniguard_custom('T', filter_label='unsafe')
-# omni_custom_I = lambda: hf_load_omniguard_custom('I')
-omni_custom_I = lambda: hf_load_omniguard_custom('I', filter_label='unsafe')
-# omni_custom_A = lambda: hf_load_omniguard_custom('A')
-omni_custom_A = lambda: hf_load_omniguard_custom('A', filter_label='unsafe')
-# omni_custom_V = lambda: hf_load_omniguard_custom('V')
-omni_custom_V = lambda: hf_load_omniguard_custom('V', filter_label='unsafe')
+omni_custom_T = lambda: hf_load_omniguard_custom('T')
+omni_custom_A = lambda: hf_load_omniguard_custom('A')
+omni_custom_I = lambda: hf_load_omniguard_custom('I')
+omni_custom_I_v4 = lambda: hf_load_omniguard_custom('I', version='v4')
+omni_custom_V = lambda: hf_load_omniguard_custom('V')
+omni_custom_V_v4 = lambda: hf_load_omniguard_custom('V', version='v4')
 
-# omni_custom_T_I = lambda: hf_load_omniguard_custom('T,I')
-omni_custom_T_I = lambda: hf_load_omniguard_custom('T,I', filter_label='unsafe')
-# omni_custom_ST_I = lambda: hf_load_omniguard_custom('T,I', toxic_modality='I')
-omni_custom_ST_I = lambda: hf_load_omniguard_custom('T,I', toxic_modality='I', filter_label='unsafe')
-# omni_custom_T_SI = lambda: hf_load_omniguard_custom('T,I', toxic_modality='T')
-omni_custom_T_SI = lambda: hf_load_omniguard_custom('T,I', toxic_modality='T', filter_label='unsafe')
+omni_custom_T_I = lambda: hf_load_omniguard_custom('T,I')
+omni_custom_T_I_v4 = lambda: hf_load_omniguard_custom('T,I', version='v4')
+omni_custom_ST_I = lambda: hf_load_omniguard_custom('T,I', toxic_modality='I')
+omni_custom_ST_I_v4 = lambda: hf_load_omniguard_custom('T,I', toxic_modality='I', version='v4')
+omni_custom_T_SI = lambda: hf_load_omniguard_custom('T,I', toxic_modality='T')
+omni_custom_T_SI_v4 = lambda: hf_load_omniguard_custom('T,I', toxic_modality='T', version='v4')
 
-# omni_custom_T_A = lambda: hf_load_omniguard_custom('T,A')
-omni_custom_T_A = lambda: hf_load_omniguard_custom('T,A', filter_label='unsafe')
-# omni_custom_ST_A = lambda: hf_load_omniguard_custom('T,A', toxic_modality='A')
-omni_custom_ST_A = lambda: hf_load_omniguard_custom('T,A', toxic_modality='A', filter_label='unsafe')
-# omni_custom_T_SA = lambda: hf_load_omniguard_custom('T,A', toxic_modality='T')
-omni_custom_T_SA = lambda: hf_load_omniguard_custom('T,A', toxic_modality='T', filter_label='unsafe')
+omni_custom_T_A = lambda: hf_load_omniguard_custom('T,A')
+omni_custom_ST_A = lambda: hf_load_omniguard_custom('T,A', toxic_modality='A')
+omni_custom_T_SA = lambda: hf_load_omniguard_custom('T,A', toxic_modality='T')
 
-# omni_custom_T_V = lambda: hf_load_omniguard_custom('T,V')
-omni_custom_T_V = lambda: hf_load_omniguard_custom('T,V', filter_label='unsafe')
-# omni_custom_ST_V = lambda: hf_load_omniguard_custom('T,V', toxic_modality='V')
-omni_custom_ST_V = lambda: hf_load_omniguard_custom('T,V', toxic_modality='V', filter_label='unsafe')
-# omni_custom_T_SV = lambda: hf_load_omniguard_custom('T,V', toxic_modality='T')
-omni_custom_T_SV = lambda: hf_load_omniguard_custom('T,V', toxic_modality='T', filter_label='unsafe')
+omni_custom_T_V = lambda: hf_load_omniguard_custom('T,V')
+omni_custom_T_V_v4 = lambda: hf_load_omniguard_custom('T,V', version='v4')
+omni_custom_ST_V = lambda: hf_load_omniguard_custom('T,V', toxic_modality='V')
+omni_custom_ST_V_v4 = lambda: hf_load_omniguard_custom('T,V', toxic_modality='V', version='v4')
+omni_custom_T_SV = lambda: hf_load_omniguard_custom('T,V', toxic_modality='T')
+omni_custom_T_SV_v4 = lambda: hf_load_omniguard_custom('T,V', toxic_modality='T', version='v4')
 
 omni_custom_I_A = lambda: hf_load_omniguard_custom('I,A')
+omni_custom_I_A_v4 = lambda: hf_load_omniguard_custom('I,A', version='v4')
 omni_custom_I_SA = lambda: hf_load_omniguard_custom('I,A', toxic_modality='I')
+omni_custom_I_SA_v4 = lambda: hf_load_omniguard_custom('I,A', toxic_modality='I', version='v4')
 omni_custom_SI_A = lambda: hf_load_omniguard_custom('I,A', toxic_modality='A')
+omni_custom_SI_A_v4 = lambda: hf_load_omniguard_custom('I,A', toxic_modality='A', version='v4')
 
 omni_custom_I_V = lambda: hf_load_omniguard_custom('I,V')
+omni_custom_I_V_v4 = lambda: hf_load_omniguard_custom('I,V', version='v4')
 omni_custom_SI_V = lambda: hf_load_omniguard_custom('I,V', toxic_modality='V')
+omni_custom_SI_V_v4 = lambda: hf_load_omniguard_custom('I,V', toxic_modality='V', version='v4')
 omni_custom_I_SV = lambda: hf_load_omniguard_custom('I,V', toxic_modality='I')
+omni_custom_I_SV_v4 = lambda: hf_load_omniguard_custom('I,V', toxic_modality='I', version='v4')
 
 omni_custom_V_A = lambda: hf_load_omniguard_custom('V,A')
+omni_custom_V_A_v4 = lambda: hf_load_omniguard_custom('V,A', version='v4')
 omni_custom_V_SA = lambda: hf_load_omniguard_custom('V,A', toxic_modality='V')
+omni_custom_V_SA_v4 = lambda: hf_load_omniguard_custom('V,A', toxic_modality='V', version='v4')
 omni_custom_SV_A = lambda: hf_load_omniguard_custom('V,A', toxic_modality='A')
+omni_custom_SV_A_v4 = lambda: hf_load_omniguard_custom('V,A', toxic_modality='A', version='v4')
 
 omni_custom_T_I_A = lambda: hf_load_omniguard_custom('T,I,A')
+omni_custom_T_I_A_v4 = lambda: hf_load_omniguard_custom('T,I,A', version='v4')
 omni_custom_T_SI_SA = lambda: hf_load_omniguard_custom('T,I,A', toxic_modality='T')
+omni_custom_T_SI_SA_v4 = lambda: hf_load_omniguard_custom('T,I,A', toxic_modality='T', version='v4')
 omni_custom_ST_I_SA = lambda: hf_load_omniguard_custom('T,I,A', toxic_modality='I')
+omni_custom_ST_I_SA_v4 = lambda: hf_load_omniguard_custom('T,I,A', toxic_modality='I', version='v4')
 omni_custom_ST_SI_A = lambda: hf_load_omniguard_custom('T,I,A', toxic_modality='A')
+omni_custom_ST_SI_A_v4 = lambda: hf_load_omniguard_custom('T,I,A', toxic_modality='A', version='v4')
 omni_custom_ST_I_A = lambda: hf_load_omniguard_custom('T,I,A', toxic_modality='I,A')
 omni_custom_T_SI_A = lambda: hf_load_omniguard_custom('T,I,A', toxic_modality='T,A')
 omni_custom_T_I_SA = lambda: hf_load_omniguard_custom('T,I,A', toxic_modality='T,I')
 
 omni_custom_T_V_A = lambda: hf_load_omniguard_custom('T,V,A')
+omni_custom_T_V_A_v4 = lambda: hf_load_omniguard_custom('T,V,A', version='v4')
 omni_custom_T_SV_SA = lambda: hf_load_omniguard_custom('T,V,A', toxic_modality='T')
+omni_custom_T_SV_SA_v4 = lambda: hf_load_omniguard_custom('T,V,A', toxic_modality='T', version='v4')
 omni_custom_ST_V_SA = lambda: hf_load_omniguard_custom('T,V,A', toxic_modality='V')
+omni_custom_ST_V_SA_v4 = lambda: hf_load_omniguard_custom('T,V,A', toxic_modality='V', version='v4')
 omni_custom_ST_SV_A = lambda: hf_load_omniguard_custom('T,V,A', toxic_modality='A')
+omni_custom_ST_SV_A_v4 = lambda: hf_load_omniguard_custom('T,V,A', toxic_modality='A', version='v4')
 omni_custom_ST_V_A = lambda: hf_load_omniguard_custom('T,V,A', toxic_modality='V,A')
 omni_custom_T_SV_A = lambda: hf_load_omniguard_custom('T,V,A', toxic_modality='T,A')
 omni_custom_T_V_SA = lambda: hf_load_omniguard_custom('T,V,A', toxic_modality='T,V')
 
 omni_custom_T_I_V = lambda: hf_load_omniguard_custom('T,I,V')
+omni_custom_T_I_V_v4 = lambda: hf_load_omniguard_custom('T,I,V', version='v4')
 omni_custom_T_SI_SV = lambda: hf_load_omniguard_custom('T,I,V', toxic_modality='T')
+omni_custom_T_SI_SV_v4 = lambda: hf_load_omniguard_custom('T,I,V', toxic_modality='T', version='v4')
 omni_custom_ST_I_SV = lambda: hf_load_omniguard_custom('T,I,V', toxic_modality='I')
+omni_custom_ST_I_SV_v4 = lambda: hf_load_omniguard_custom('T,I,V', toxic_modality='I', version='v4')
 omni_custom_ST_SI_V = lambda: hf_load_omniguard_custom('T,I,V', toxic_modality='V')
+omni_custom_ST_SI_V_v4 = lambda: hf_load_omniguard_custom('T,I,V', toxic_modality='V', version='v4')
 omni_custom_ST_I_V = lambda: hf_load_omniguard_custom('T,I,V', toxic_modality='I,V')
 omni_custom_T_SI_V = lambda: hf_load_omniguard_custom('T,I,V', toxic_modality='T,V')
 omni_custom_T_I_SV = lambda: hf_load_omniguard_custom('T,I,V', toxic_modality='T,I')
 
 omni_custom_I_A_V = lambda: hf_load_omniguard_custom('I,A,V')
+omni_custom_I_A_V_v4 = lambda: hf_load_omniguard_custom('I,A,V', version='v4')
 omni_custom_I_SA_SV = lambda: hf_load_omniguard_custom('I,A,V', toxic_modality='I')
+omni_custom_I_SA_SV_v4 = lambda: hf_load_omniguard_custom('I,A,V', toxic_modality='I', version='v4')
 omni_custom_SI_A_SV = lambda: hf_load_omniguard_custom('I,A,V', toxic_modality='A')
+omni_custom_SI_A_SV_v4 = lambda: hf_load_omniguard_custom('I,A,V', toxic_modality='A', version='v4')
 omni_custom_SI_SA_V = lambda: hf_load_omniguard_custom('I,A,V', toxic_modality='V')
+omni_custom_SI_SA_V_v4 = lambda: hf_load_omniguard_custom('I,A,V', toxic_modality='V', version='v4')
 omni_custom_SI_A_V = lambda: hf_load_omniguard_custom('I,A,V', toxic_modality='A,V')
 omni_custom_I_SA_V = lambda: hf_load_omniguard_custom('I,A,V', toxic_modality='I,V')
 omni_custom_I_A_SV = lambda: hf_load_omniguard_custom('I,A,V', toxic_modality='I,A')
 
 omni_custom = lambda: hf_load_omniguard_custom()
+omni_custom_v4 = lambda: hf_load_omniguard_custom(version='v4')
 omni_custom_T_SI_SA_SV = lambda: hf_load_omniguard_custom(toxic_modality='T')
+omni_custom_T_SI_SA_SV_v4 = lambda: hf_load_omniguard_custom(toxic_modality='T', version='v4')
 omni_custom_ST_I_SA_SV = lambda: hf_load_omniguard_custom(toxic_modality='I')
+omni_custom_ST_I_SA_SV_v4 = lambda: hf_load_omniguard_custom(toxic_modality='I', version='v4')
 omni_custom_ST_SI_A_SV = lambda: hf_load_omniguard_custom(toxic_modality='A')
+omni_custom_ST_SI_A_SV_v4 = lambda: hf_load_omniguard_custom(toxic_modality='A', version='v4')
 omni_custom_ST_SI_SA_V = lambda: hf_load_omniguard_custom(toxic_modality='V')
+omni_custom_ST_SI_SA_V_v4 = lambda: hf_load_omniguard_custom(toxic_modality='V', version='v4')
 omni_custom_ST_I_A_V = lambda: hf_load_omniguard_custom(toxic_modality='I,A,V')
 omni_custom_T_SI_A_V = lambda: hf_load_omniguard_custom(toxic_modality='T,A,V')
 omni_custom_T_I_SA_V = lambda: hf_load_omniguard_custom(toxic_modality='T,I,V')

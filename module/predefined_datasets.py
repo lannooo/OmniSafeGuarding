@@ -181,6 +181,17 @@ probe_omni_custom_v1 = DatasetConfigs([
     Splitable(CustomOmniModality.omni_custom_ST_V_A, train_split=0),
     Splitable(CustomOmniModality.omni_custom_ST_V_SA, train_split=0),
 ])
+probe_omni_custom_v2 = DatasetConfigs([
+    Splitable(CustomOmniModality.omni_custom_T, train_split=100),
+    Splitable(CustomOmniModality.omni_custom_I_2, train_split=0),
+    # Splitable(CustomOmniModality.omni_custom_TI_2, train_split=0),
+    Splitable(CustomOmniModality.omni_custom_V_2, train_split=0),
+    # Splitable(CustomOmniModality.omni_custom_TV_2, train_split=0),
+    Splitable(CustomOmniModality.omni_custom_A, train_split=0),
+    # Splitable(CustomOmniModality.omni_custom_TA, train_split=0),
+    # Splitable(CustomOmniModality.omni_custom_TIA_2, train_split=0),
+    # Splitable(CustomOmniModality.omni_custom_TVA_2, train_split=0),
+])
 # -------------------------------------
 
 # ----------------Training----------------
@@ -261,7 +272,7 @@ eval_general = DatasetConfigs([
 ])
 
 eval_basic_safety = DatasetConfigs([
-    # Splitable(TextModality.jbv_redteam_2k),
+    Splitable(TextModality.jbv_redteam_2k),
     Splitable(TextModality.beavertails_30k_test),
     Splitable(TextModality.aegis2_test),
     Splitable(TextModality.openai_moderation),
@@ -280,19 +291,20 @@ eval_basic_safety = DatasetConfigs([
 ])
 
 eval_ext_jailbreaks = DatasetConfigs([
-    Splitable(TextModality.forbidden_question_dan),
-    Splitable(TextModality.harmbench_contextual),
-    Splitable(TextModality.jailbreakbench),
-    Splitable(TextModality.cipherchat),
+    Splitable(TextModality.forbidden_question_dan), # 1
+    Splitable(TextModality.harmbench_contextual),   # -
+    Splitable(TextModality.jailbreakbench),         # 5
+    Splitable(TextModality.cipherchat),             # 1 / 4
 
-    Splitable(VisionModality.mm_safetybench),
-    # Splitable(VisionModality.jbv_jailbreak_mini),
-    Splitable(VisionModality.figstep),
-    # Splitable(VisionModality.mml_hades),
+    # Splitable(VisionModality.rtvlm), # 1
+    Splitable(VisionModality.mm_safetybench),       # 1 / 3
+    Splitable(VisionModality.jbv_jailbreak_mini),   # 1
+    Splitable(VisionModality.figstep),              # 1
+    Splitable(VisionModality.mml_hades),            # 1 / 4
 
-    Splitable(AudioModality.omni_safetybench_dual_ta),
-    # Splitable(AudioModality.aiah_spelling),
-    Splitable(AudioModality.ajailbench),
+    Splitable(AudioModality.omni_safetybench_dual_ta), # 1
+    # Splitable(AudioModality.aiah_spelling),            # 1
+    Splitable(AudioModality.ajailbench),               # 2
 
     Splitable(VisionModality.omni_safetybench_dual_tv),
     Splitable(VisionModality.video_safetybench_ben)
@@ -325,40 +337,68 @@ eval_false_reject = DatasetConfigs([
 
 eval_custom_modality = DatasetConfigs([
     Splitable(CustomOmniModality.omni_custom_T),
-    Splitable(CustomOmniModality.omni_custom_T_SI),
+    # Splitable(CustomOmniModality.omni_custom_T_SI),
+    Splitable(CustomOmniModality.omni_custom_T_SI_2),
     Splitable(CustomOmniModality.omni_custom_T_SA),
-    Splitable(CustomOmniModality.omni_custom_T_SV),
-    Splitable(CustomOmniModality.omni_custom_T_SI_SA),
-    Splitable(CustomOmniModality.omni_custom_T_SV_SA),
-    Splitable(CustomOmniModality.omni_custom_T_SI_SV),
-    Splitable(CustomOmniModality.omni_custom_T_SI_SA_SV),
+    # Splitable(CustomOmniModality.omni_custom_T_SV),
+    Splitable(CustomOmniModality.omni_custom_T_SV_2),
+    # Splitable(CustomOmniModality.omni_custom_T_SI_SA),
+    Splitable(CustomOmniModality.omni_custom_T_SI_SA_2),
+    # Splitable(CustomOmniModality.omni_custom_T_SV_SA),
+    Splitable(CustomOmniModality.omni_custom_T_SV_SA_2),
+    # Splitable(CustomOmniModality.omni_custom_T_SI_SV),
+    Splitable(CustomOmniModality.omni_custom_T_SI_SV_2),
+    # Splitable(CustomOmniModality.omni_custom_T_SI_SA_SV),
+    Splitable(CustomOmniModality.omni_custom_T_SI_SA_SV_2),
 
-    Splitable(CustomOmniModality.omni_custom_I),
-    Splitable(CustomOmniModality.omni_custom_ST_I),
-    Splitable(CustomOmniModality.omni_custom_I_SV),
-    Splitable(CustomOmniModality.omni_custom_I_SA),
-    Splitable(CustomOmniModality.omni_custom_ST_I_SA),
-    Splitable(CustomOmniModality.omni_custom_ST_I_SV),
-    Splitable(CustomOmniModality.omni_custom_I_SA_SV),
-    Splitable(CustomOmniModality.omni_custom_ST_I_SA_SV),
+    # Splitable(CustomOmniModality.omni_custom_I),
+    Splitable(CustomOmniModality.omni_custom_I_2),
+    # Splitable(CustomOmniModality.omni_custom_ST_I),
+    Splitable(CustomOmniModality.omni_custom_ST_I_2),
+    # Splitable(CustomOmniModality.omni_custom_I_SV),
+    Splitable(CustomOmniModality.omni_custom_I_SV_2),
+    # Splitable(CustomOmniModality.omni_custom_I_SA),
+    Splitable(CustomOmniModality.omni_custom_I_SA_2),
+    # Splitable(CustomOmniModality.omni_custom_ST_I_SA),
+    Splitable(CustomOmniModality.omni_custom_ST_I_SA_2),
+    # Splitable(CustomOmniModality.omni_custom_ST_I_SV),
+    Splitable(CustomOmniModality.omni_custom_ST_I_SV_2),
+    # Splitable(CustomOmniModality.omni_custom_I_SA_SV),
+    Splitable(CustomOmniModality.omni_custom_I_SA_SV_2),
+    # Splitable(CustomOmniModality.omni_custom_ST_I_SA_SV),
+    Splitable(CustomOmniModality.omni_custom_ST_I_SA_SV_2),
 
-    Splitable(CustomOmniModality.omni_custom_V),
-    Splitable(CustomOmniModality.omni_custom_ST_V),
-    Splitable(CustomOmniModality.omni_custom_V_SA),
-    Splitable(CustomOmniModality.omni_custom_SI_V),
-    Splitable(CustomOmniModality.omni_custom_ST_V_SA),
-    Splitable(CustomOmniModality.omni_custom_SI_SA_V),
-    Splitable(CustomOmniModality.omni_custom_ST_SI_V),
-    Splitable(CustomOmniModality.omni_custom_ST_SI_SA_V),
+    # Splitable(CustomOmniModality.omni_custom_V),
+    Splitable(CustomOmniModality.omni_custom_V_2),
+    # Splitable(CustomOmniModality.omni_custom_ST_V),
+    Splitable(CustomOmniModality.omni_custom_ST_V_2),
+    # Splitable(CustomOmniModality.omni_custom_V_SA),
+    Splitable(CustomOmniModality.omni_custom_V_SA_2),
+    # Splitable(CustomOmniModality.omni_custom_SI_V),
+    Splitable(CustomOmniModality.omni_custom_SI_V_2),
+    # Splitable(CustomOmniModality.omni_custom_ST_V_SA),
+    Splitable(CustomOmniModality.omni_custom_ST_V_SA_2),
+    # Splitable(CustomOmniModality.omni_custom_SI_SA_V),
+    Splitable(CustomOmniModality.omni_custom_SI_SA_V_2),
+    # Splitable(CustomOmniModality.omni_custom_ST_SI_V),
+    Splitable(CustomOmniModality.omni_custom_ST_SI_V_2),
+    # Splitable(CustomOmniModality.omni_custom_ST_SI_SA_V),
+    Splitable(CustomOmniModality.omni_custom_ST_SI_SA_V_2),
     
     Splitable(CustomOmniModality.omni_custom_A),
     Splitable(CustomOmniModality.omni_custom_ST_A),
-    Splitable(CustomOmniModality.omni_custom_SI_A),
-    Splitable(CustomOmniModality.omni_custom_SV_A),
-    Splitable(CustomOmniModality.omni_custom_ST_SI_A),
-    Splitable(CustomOmniModality.omni_custom_ST_SV_A),
-    Splitable(CustomOmniModality.omni_custom_SI_A_SV),
-    Splitable(CustomOmniModality.omni_custom_ST_SI_A_SV),
+    # Splitable(CustomOmniModality.omni_custom_SI_A),
+    Splitable(CustomOmniModality.omni_custom_SI_A_2),
+    # Splitable(CustomOmniModality.omni_custom_SV_A),
+    Splitable(CustomOmniModality.omni_custom_SV_A_2),
+    # Splitable(CustomOmniModality.omni_custom_ST_SI_A),
+    Splitable(CustomOmniModality.omni_custom_ST_SI_A_2),
+    # Splitable(CustomOmniModality.omni_custom_ST_SV_A),
+    Splitable(CustomOmniModality.omni_custom_ST_SV_A_2),
+    # Splitable(CustomOmniModality.omni_custom_SI_A_SV),
+    Splitable(CustomOmniModality.omni_custom_SI_A_SV_2),
+    # Splitable(CustomOmniModality.omni_custom_ST_SI_A_SV),
+    Splitable(CustomOmniModality.omni_custom_ST_SI_A_SV_2),
 
     # Splitable(CustomOmniModality.omni_custom_TI),
     # Splitable(CustomOmniModality.omni_custom_TV),
