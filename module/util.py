@@ -39,6 +39,22 @@ def not_empty(item:dict, key:str):
         return False
     return True
 
+
+def mask_textual_query(query:str, tokenizer, mask_token:str)->str:
+    tokenizer = tokenizer.tokenizer if hasattr(tokenizer, "tokenizer") else tokenizer
+    query_length = len(tokenizer.encode(query, add_special_tokens=False))
+    return ' '.join([mask_token] * query_length)
+
+def mask_image(ori_img:Image.Image, background_color=(255, 255, 255)):
+    return Image.new("RGB", ori_img.size, background_color)
+
+def mask_video(ori_video:list, background_color=(255, 255, 255)):
+    return [Image.new("RGB", frame.size, background_color) for frame in ori_video]
+
+def mask_audio(ori_audio:np.ndarray):
+    return np.zeros(ori_audio.shape)
+
+
 def build_omniguard_input_alpaca(item:dict, roleplay="User's question: "):
     input = roleplay
     images, audios, videos = [], [], []

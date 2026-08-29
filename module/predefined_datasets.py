@@ -230,6 +230,29 @@ eval_fast_validate = DatasetConfigs([
     Splitable(AudioModality.aiah_alignment),
 ])
 
+MASK_CONFIG_TEXT = {'replace_word': 'mask', 'mask_txt': True}
+MASK_CONFIG_IMAGE = {'replace_word': 'mask', 'mask_img': True}
+MASK_CONFIG_AUDIO = {'replace_word': 'mask', 'mask_audio': True}
+MASK_CONFIG_VIDEO = {'replace_word': 'mask', 'mask_video': True}
+MASK_CONFIG_ALL = {'replace_word': 'mask', 'mask_txt': True, 'mask_img': True, 'mask_audio': True, 'mask_video': True}
+
+eval_mask_all_exp = DatasetConfigs([
+    Splitable(TextModality.toxicchat_test, mask_config=MASK_CONFIG_ALL),
+    Splitable(VisionModality.vlsbench, mask_config=MASK_CONFIG_ALL),
+    Splitable(VisionModality.mm_safetybench, mask_config=MASK_CONFIG_ALL),
+    Splitable(AudioModality.aiah, mask_config=MASK_CONFIG_ALL),
+    Splitable(AudioModality.ajailbench, mask_config=MASK_CONFIG_ALL),
+    Splitable(VisionModality.video_safetybench_ben, mask_config=MASK_CONFIG_ALL),
+    Splitable(VisionModality.safewatch_real, mask_config=MASK_CONFIG_ALL),
+
+    # Splitable(VisionModality.vlguard, mask_config=MASK_CONFIG_ALL),
+    # Splitable(VisionModality.siuo, mask_config=MASK_CONFIG_ALL),
+    # Splitable(VisionModality.rtvlm, mask_config=MASK_CONFIG_ALL),
+    # Splitable(VisionModality.jbv_jailbreak_mini, mask_config=MASK_CONFIG_ALL),
+    # Splitable(VisionModality.figstep, mask_config=MASK_CONFIG_ALL),
+    # Splitable(VisionModality.mml_hades, mask_config=MASK_CONFIG_ALL),
+])
+
 eval_general = DatasetConfigs([
     Splitable(TextModality.truthfulQA),             # Text
     Splitable(VisionModality.mme),                  # Image
@@ -268,6 +291,7 @@ eval_ext_jailbreaks = DatasetConfigs([
     # Splitable(VisionModality.mml_hades),
 
     Splitable(AudioModality.omni_safetybench_dual_ta),
+    # Splitable(AudioModality.aiah_spelling),
     Splitable(AudioModality.ajailbench),
 
     Splitable(VisionModality.omni_safetybench_dual_tv),

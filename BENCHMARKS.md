@@ -173,7 +173,7 @@ The following packages are provided in mini/partial form for quick runs, while f
 
 - `data/external/JailBreakV-28k-mini.zip` (full dataset: https://huggingface.co/datasets/JailbreakV-28K/JailBreakV-28k)
 - `data/external/MML-SafeBench.zip` (full dataset access/apply: https://github.com/wangyu-ovo/MML)
-- `data/external/Omniguard_Custom_mini.zip` (download from anonymous Zenodo: https://zenodo.org/records/19999112; place under `data/external/`)
+- `data/external/Omniguard_Custom_mini.zip` (download from anonymous Zenodo: https://zenodo.org/records/22157542; place under `data/external/`)
 
 Because these subsets/media are large and typically require Git LFS, they may be unavailable in some anonymous repo snapshots.
 For this reason, related benchmarks are commented out in default evaluation configs. After you prepare these datasets locally, uncomment the corresponding eval entries.
@@ -266,7 +266,7 @@ This repository includes a mini Omniguard_Custom dataset for quick evaluation.
 
 You can also download the full Omniguard_Custom dataset anonymously from Zenodo:
 
-**[Download Omniguard_Custom from Zenodo](https://zenodo.org/records/19999112)**
+**[Download Omniguard_Custom from Zenodo](https://zenodo.org/records/22157542)**
 
 Or generate by your own, see `scripts/generate_omni_custom_quard.py`.
 

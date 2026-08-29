@@ -1883,11 +1883,14 @@ HF_Custom_Dataset = {
 }
 HF_Custom_Data_Dir = f"{DATA_DIR}/Omniguard_Custom"
 HF_Custom_Behavior_Pairs = f'{DATA_DIR}/Omniguard_Custom/behavior_pairs.jsonl'
-def hf_load_omniguard_custom(modalities:str='T,I,A,V', toxic_modality=None, version='v3'):
+def hf_load_omniguard_custom(modalities:str='T,I,A,V', toxic_modality=None, version='v3', filter_label=None):
     # load jsonl file
     with open(HF_Custom_Dataset[version], 'r') as f:
         data = [json.loads(line) for line in f]
         data_mapping = {item['query']: item for item in data}
+    assert filter_label in [None, 'unsafe', 'safe'], f"filter label must be in [None, 'unsafe', 'safe'], got {filter_label}"
+    if filter_label:
+        data = [item for item in data if item['label'] == filter_label]
     with open(HF_Custom_Behavior_Pairs, 'r') as f:
         pairs = [json.loads(line) for line in f]
         unsafe_safe_mappings = {item['original']: item['target'] for item in pairs}
@@ -1934,13 +1937,13 @@ def hf_load_omniguard_custom(modalities:str='T,I,A,V', toxic_modality=None, vers
     return dataset
 
 
-# [MT-Bench] text benign queries
+# 1. [MT-Bench] text benign queries
 mtbench = lambda: hf_load_mtbench() # 80 samples
 
-# [TruthfulQA] text benign queries
+# 2. [TruthfulQA] text benign queries
 truthful = lambda: hf_load_truthfulQA()
 
-# [AdvBench] text unsafe queries
+# 3. [AdvBench] text unsafe queries
 advbench = lambda: hf_load_advbench()
 advdetoxic_voice = lambda: hf_load_adv_det()
 advdetoxic_text_safe = lambda: hf_load_adv_det(filter_safety=True, text_only=True)
@@ -1948,62 +1951,68 @@ advdetoxic_text_unsafe = lambda: hf_load_adv_det(filter_safety=False, text_only=
 advdetoxic_voice_safe = lambda: hf_load_adv_det(filter_safety=True)
 advdetoxic_voice_unsafe = lambda: hf_load_adv_det(filter_safety=False)
 
-# [Harmbench] text unsafe queries
+# 4. [Harmbench] text unsafe queries
 harmbench_standard = lambda: hf_load_HarmBench(subset='standard')     # 200 samples
 harmbench_contextual = lambda: hf_load_HarmBench(subset='contextual') # 100 samples
 
-# [SimpleSafetyTests] text harmful queries
+# 5. [SimpleSafetyTests] text harmful queries
 simplesafetytests = lambda: hf_load_simplesafety() # total 100 samples
 
-# [XSTest] text safe/unsafe queries & responses to examine over-reject behaviors
+# 6. [XSTest] text safe/unsafe queries & responses to examine over-reject behaviors
 xstest = lambda: hf_load_xstest() # 450 samples
 # xstest_response = lambda: hf_load_xstest(prompt_only=False) # 2078 samples (not 450*5 because some over-reject responses are filterd out)
 
-# [OpenAI Moderation evaluation] text safe/unsafe queries
+# 7. [OpenAI Moderation evaluation] text safe/unsafe queries
 openai_moderation = lambda: hf_load_openai_mod()
 
-# [WildGuard mix] text queries & responses
+# 8. [WildGuard mix] text queries & responses
 wildguardtest = lambda: hf_load_wildguard_mix(subset='wildguardtest', split='test')
 # wildguardtest_response = lambda: hf_load_wildguard_mix(subset='wildguardtest', split='test', prompt_only=False)
 
-# [Toxic Chat] text queries & responses
+# 9. [Toxic Chat] text queries & responses
 toxicchat_test = lambda: hf_load_toxic_chat(split='test')
 
-# [Forbidden Questions (DAN)] text jailbreaks (base questions + jailbreak prompts)
+# 10. [Forbidden Questions (DAN)] text jailbreaks (base questions + jailbreak prompts)
 forbidden_questions_dan = lambda: hf_load_ForbiddenQuestion_DAN(question_only=False)  # total 21450 samples
 forbidden_questions_base = lambda: hf_load_ForbiddenQuestion_DAN(question_only=True)  # base 390 samples, 30 per class
+# 36. [JBB]
 jailbreakbench = lambda: hf_load_jbb()
+# 37. [CipherChat]
 cipher_chat = lambda: hf_load_cipherchat()
-# [Beavertails] large-scale text safe/unsafe queries
+# 11. [Beavertails] large-scale text safe/unsafe queries
 beavertails_30k_test = lambda: hf_load_BeaverTails(split='30k_test')  # 5693 samples (unique)
 
-# [Aegis2.0]
+# 12. [Aegis2.0]
 aegis2_test = lambda: hf_load_Aegis2(split='test')
 
-# [SafeRLHF]
+# 13. [SafeRLHF]
 saferlhf_test = lambda: hf_load_SafeRLHF(split='test')
 
 # Vision (Image-Text)
+# 14. [MM-Vet 1/2]
 mm_vet_v1 = lambda: hf_load_mm_vet()
 mm_vet_v2 = lambda: hf_load_mm_vet_v2()
+# 15. [MME]
 mme = lambda: hf_load_MME()  # 2374 samples
+# 16. [LLaVA-Bench]
 llava_bench_wild = lambda: hf_load_llava_bench_wild()
+# 16. [OKVQA]
 okvqa = lambda: hf_load_OKVQA()
 
-# [Redteam-2K/JailbreakV-28K] unsafe image-text queries/jailbreaks
+# 17. [Redteam-2K/JailbreakV-28K] unsafe image-text queries/jailbreaks
 jbv_redteam_2k = lambda: hf_load_jailbreakv28k(subset='RedTeam_2K', split="RedTeam_2K")
 jbv_jailbreak_28k = lambda: hf_load_jailbreakv28k(subset="JailBreakV_28K", split="JailBreakV_28K", query="jailbreak_query")
 jbv_jailbreak_mini = lambda: hf_load_jailbreakv28k(subset="JailBreakV_28K", split='mini_JailBreakV_28K', query="jailbreak_query") # total 280 samples
 # jbv_jailbreak_direct_mini = lambda: hf_load_jailbreakv28k(subset="JailBreakV_28K", split='mini_JailBreakV_28K', query="redteam_query")
 
-# [MM-Safetybench] unsafe image-text queries/structured attacks
+# 18. [MM-Safetybench] unsafe image-text queries/structured attacks
 mm_safetybench = lambda: hf_load_mm_safetybench()                       # total 5040 samples
 mm_safetybench_text = lambda: hf_load_mm_safetybench(split='Text_only') # total 1680 samples
 mm_safetybench_TYPO = lambda: hf_load_mm_safetybench(split='TYPO')
 mm_safetybench_SD = lambda: hf_load_mm_safetybench(split='SD')
 mm_safetybench_SDTYPO = lambda: hf_load_mm_safetybench(split='SD_TYPO')
 
-# [MML-Safebench]
+# 19. [MML-Safebench]
 mml_hades_wr = lambda: hf_load_mml_safebench('hades', 'images_wr')
 mml_hades_mirror = lambda: hf_load_mml_safebench('hades', 'images_mirror')
 mml_hades_rotate = lambda: hf_load_mml_safebench('hades', 'images_rotate')
@@ -2017,24 +2026,26 @@ mml_figstep_mirror = lambda: hf_load_mml_safebench('safebench', 'images_mirror')
 mml_figstep_rotate = lambda: hf_load_mml_safebench('safebench', 'images_rotate')
 mml_figstep_base64 = lambda: hf_load_mml_safebench('safebench', 'images_base64')
 
-# [VLSafe]
+# 20. [VLSafe]
 vlsafe = lambda: hf_load_VLSafe()
-# [FigStep]
+# 21. [FigStep]
 figstep = lambda: hf_load_FigStep()
-# [VLSBench]
+# 22. [VLSBench]
 vlsbench = lambda: hf_load_vlsbench()
-# [Hades]
+# 23. [Hades]
 hades = lambda: hf_load_hades()
-# [SIUO]
+# 24. [SIUO]
 siuo = lambda: hf_load_SIUO()
-# [RedTeamingVLM]
+# 25. [RedTeamingVLM]
 rtvlm = lambda: hf_load_RedTeamingVLM()
+# 26. [VLGuard]
 vlguard = lambda: hf_load_vlguard()
+# 27. [HoliSafe]
 holisafe = lambda: hf_load_holisafe()
 holisafe_safe_image = lambda: hf_load_holisafe(filter_type='SSS', image_only=True)
 holisafe_unsafe_image = lambda: hf_load_holisafe(filter_type='UUU', image_only=True)
 
-# [VoiceBench] large-scale audio benchmarks (mostly safe, advbench split is unsafe)
+# 28. [VoiceBench] large-scale audio benchmarks (mostly safe, advbench split is unsafe)
 voicebench_advbench = lambda: hf_load_Voicebench(subset='advbench', mode='audio_prompt')
 voicebench_advbench_audio = lambda: hf_load_Voicebench(subset='advbench', mode='audio_only')
 voicebench_advbench_text = lambda: hf_load_Voicebench(subset='advbench', mode='text_only')
@@ -2052,14 +2063,14 @@ voicebench_openbookqa_text = lambda: hf_load_Voicebench(subset='openbookqa', mod
 voicebench_wildvoice = lambda: hf_load_Voicebench(subset='wildvoice', mode='audio_prompt')
 voicebench_wildvoice_text = lambda: hf_load_Voicebench(subset='wildvoice', mode='text_only') # 1000 samples
 
-# [AudioJailbreak] large-scale audio jailbreaks
+# 29. [AudioJailbreak] large-scale audio jailbreaks
 ajailbench_origin_text = lambda: hf_load_AudioJailbreak(subset='Origin', split='origin', mode='text_only')
 ajailbench_origin = lambda: hf_load_AudioJailbreak(subset='Origin', split='origin') # 1490 samples
 ajailbench_origin_prompt = lambda: hf_load_AudioJailbreak(subset='Origin', split='origin', mode='audio_prompt')
 ajailbench_apt = lambda: hf_load_AudioJailbreak(subset='APT', split=['Diva', 'Gemini2.0_flash', 'LLama_Omni', 'gpt4o', 'qwen2']) # 2500 samples
 ajailbench_apt_prompt = lambda: hf_load_AudioJailbreak(subset='APT', split=['Diva', 'Gemini2.0_flash', 'LLama_Omni', 'gpt4o', 'qwen2'], mode='audio_prompt')
 
-# [AIAH] audio redteaming datast, TODO: other audio-related attacks
+# 30. [AIAH] audio redteaming datast, TODO: other audio-related attacks
 aiah_alignment = lambda: hf_load_AIAH()
 aiah_alignment_text = lambda: hf_load_AIAH(prompt_type='plain_text') # total 350 samples
 aiah_spelling = lambda: hf_load_AIAH(subset='spelling_jailbreak')
@@ -2068,13 +2079,13 @@ aiah_nonspeech_empty = lambda: hf_load_AIAH(subset='non_speech_audio', prompt_ty
 aiah_nonspeech_origin = lambda: hf_load_AIAH(subset='non_speech_audio', prompt_type='audio_text', noise_type='origin')
 aiah_nonspeech_standard = lambda: hf_load_AIAH(subset='non_speech_audio', prompt_type='audio_text', noise_type='standard')
 
-# [SafeBench] Multimodal (Omni) unsafe queries
+# 31. [SafeBench] Multimodal (Omni) unsafe queries
 safebench_t = lambda: hf_load_SafeBench(prompt_type='text')
 safebench_ti = lambda: hf_load_SafeBench(prompt_type='text_image')
 safebench_ta = lambda: hf_load_SafeBench(prompt_type='text_audio')
 safebench_tia = lambda: hf_load_SafeBench(prompt_type='text_image_audio')
 
-# Omni-Safetybench: Multimodal (Omni-modal) unsafe queries (image, audio, text, video,and their combination)
+# 32. Omni-Safetybench: Multimodal (Omni-modal) unsafe queries (image, audio, text, video,and their combination)
 omni_safetybench_unimodal_t = lambda: hf_load_OmniSafetyBench(subset='unimodal', modality='text-only')  # total 972
 omni_safetybench_unimodal_a = lambda: hf_load_OmniSafetyBench(subset='unimodal', modality='audio-only') # total 972
 omni_safetybench_unimodal_i = lambda: hf_load_OmniSafetyBench(subset='unimodal', modality='image-only') # total 972
@@ -2086,31 +2097,47 @@ omni_safetybench_omni_tia = lambda: hf_load_OmniSafetyBench(subset='omni-modal',
 omni_safetybench_omni_tva = lambda: hf_load_OmniSafetyBench(subset='omni-modal', modality='video-audio-text')  # total 5832
 
 # [Video Modality]
+# 33. [MMBench-Video]
 mmbench_video_only = lambda: hf_load_mmbench_video(video_only=True)
 mmbench_video = lambda: hf_load_mmbench_video()
+# 34. [Video-SafetyBench]
 video_safetybench_ben = lambda: hf_load_video_safetybench('benign')
 video_safetybench_harmful = lambda: hf_load_video_safetybench('harmful')
 # safesora = lambda: hf_load_safesora()
+# 35. [SafeWatch]
 safewatch_real = lambda: hf_load_safewatch(subset='real')
 safewatch_genai = lambda: hf_load_safewatch(subset='genai')
 
 # custom omni-data: v3
-omni_custom_T = lambda: hf_load_omniguard_custom('T')
-omni_custom_I = lambda: hf_load_omniguard_custom('I')
-omni_custom_A = lambda: hf_load_omniguard_custom('A')
-omni_custom_V = lambda: hf_load_omniguard_custom('V')
+# omni_custom_T = lambda: hf_load_omniguard_custom('T')
+omni_custom_T = lambda: hf_load_omniguard_custom('T', filter_label='unsafe')
+# omni_custom_I = lambda: hf_load_omniguard_custom('I')
+omni_custom_I = lambda: hf_load_omniguard_custom('I', filter_label='unsafe')
+# omni_custom_A = lambda: hf_load_omniguard_custom('A')
+omni_custom_A = lambda: hf_load_omniguard_custom('A', filter_label='unsafe')
+# omni_custom_V = lambda: hf_load_omniguard_custom('V')
+omni_custom_V = lambda: hf_load_omniguard_custom('V', filter_label='unsafe')
 
-omni_custom_T_I = lambda: hf_load_omniguard_custom('T,I')
-omni_custom_ST_I = lambda: hf_load_omniguard_custom('T,I', toxic_modality='I')
-omni_custom_T_SI = lambda: hf_load_omniguard_custom('T,I', toxic_modality='T')
+# omni_custom_T_I = lambda: hf_load_omniguard_custom('T,I')
+omni_custom_T_I = lambda: hf_load_omniguard_custom('T,I', filter_label='unsafe')
+# omni_custom_ST_I = lambda: hf_load_omniguard_custom('T,I', toxic_modality='I')
+omni_custom_ST_I = lambda: hf_load_omniguard_custom('T,I', toxic_modality='I', filter_label='unsafe')
+# omni_custom_T_SI = lambda: hf_load_omniguard_custom('T,I', toxic_modality='T')
+omni_custom_T_SI = lambda: hf_load_omniguard_custom('T,I', toxic_modality='T', filter_label='unsafe')
 
-omni_custom_T_A = lambda: hf_load_omniguard_custom('T,A')
-omni_custom_ST_A = lambda: hf_load_omniguard_custom('T,A', toxic_modality='A')
-omni_custom_T_SA = lambda: hf_load_omniguard_custom('T,A', toxic_modality='T')
+# omni_custom_T_A = lambda: hf_load_omniguard_custom('T,A')
+omni_custom_T_A = lambda: hf_load_omniguard_custom('T,A', filter_label='unsafe')
+# omni_custom_ST_A = lambda: hf_load_omniguard_custom('T,A', toxic_modality='A')
+omni_custom_ST_A = lambda: hf_load_omniguard_custom('T,A', toxic_modality='A', filter_label='unsafe')
+# omni_custom_T_SA = lambda: hf_load_omniguard_custom('T,A', toxic_modality='T')
+omni_custom_T_SA = lambda: hf_load_omniguard_custom('T,A', toxic_modality='T', filter_label='unsafe')
 
-omni_custom_T_V = lambda: hf_load_omniguard_custom('T,V')
-omni_custom_ST_V = lambda: hf_load_omniguard_custom('T,V', toxic_modality='V')
-omni_custom_T_SV = lambda: hf_load_omniguard_custom('T,V', toxic_modality='T')
+# omni_custom_T_V = lambda: hf_load_omniguard_custom('T,V')
+omni_custom_T_V = lambda: hf_load_omniguard_custom('T,V', filter_label='unsafe')
+# omni_custom_ST_V = lambda: hf_load_omniguard_custom('T,V', toxic_modality='V')
+omni_custom_ST_V = lambda: hf_load_omniguard_custom('T,V', toxic_modality='V', filter_label='unsafe')
+# omni_custom_T_SV = lambda: hf_load_omniguard_custom('T,V', toxic_modality='T')
+omni_custom_T_SV = lambda: hf_load_omniguard_custom('T,V', toxic_modality='T', filter_label='unsafe')
 
 omni_custom_I_A = lambda: hf_load_omniguard_custom('I,A')
 omni_custom_I_SA = lambda: hf_load_omniguard_custom('I,A', toxic_modality='I')

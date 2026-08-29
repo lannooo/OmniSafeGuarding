@@ -20,7 +20,10 @@ from module.predefined_modality import (
     AudioModality,
     OmniModality
 )
-from module.util import report_metrics, get_model_name
+from module.util import (
+    report_metrics, get_model_name,
+    mask_textual_query, mask_image, mask_video, mask_audio
+)
 # from tqdm import tqdm
 
 def parse_safety_output(text):
@@ -41,7 +44,11 @@ def parse_safety_output(text):
         }
     return None
 
-def inference_omniguard(model_path, dataset, media_type=None, num_samples=None, device=None):
+def inference_omniguard(model_path, dataset, 
+                        media_type=None, 
+                        num_samples=None, 
+                        device=None,
+                        mask_modality=None):
     # Initialize evaluator
     print(f"\n[2/3] Loading model from: {model_path}")
     evaluator = OmniGuardEvaluator(model_id=model_path, device=device)
@@ -60,10 +67,22 @@ def inference_omniguard(model_path, dataset, media_type=None, num_samples=None, 
         if num_samples and i >= num_samples:
             break
         # print(sample)
+        # perform masking if necessary
+        if mask_modality is not None:
+            if 'text' in mask_modality:
+                sample['txt'] = mask_textual_query(sample['txt'], evaluator.tokenizer, 'mask')
+            if 'image' in mask_modality:
+                sample['img'] = mask_image(sample['img'])
+            if 'video' in mask_modality:
+                sample['video'] = mask_video(sample['video'])
+            if 'audio' in mask_modality:
+                sample['audio'] = mask_audio(sample['audio'])
+
         # Perform evaluation
         if media_type == 'text':
+            query = sample['txt']
             result = evaluator.evaluate(
-                prompt_1=sample["txt"],
+                prompt_1=query,
                 prompt_2='',
                 categories=LLAMA_GUARD_3_CATEGORY,
                 max_token=512,
@@ -89,7 +108,7 @@ def inference_omniguard(model_path, dataset, media_type=None, num_samples=None, 
             )
         parsed_result = parse_safety_output(result)
         if parsed_result is not None and parsed_result['safety'] is not None:
-            print(f"{i+1}/{n}:", parsed_result['safety'], parsed_result['category'], parsed_result['reasoning'][:256])
+            print(f"{i+1}/{n}: [", parsed_result['safety'], parsed_result['category'], parsed_result['reasoning'][:256], "]", query[:64])
             results.append({
                 "pred_toxicity": parsed_result['safety'],
                 "pred_risk": parsed_result['category'],
@@ -115,6 +134,8 @@ def main():
     parser.add_argument('--cuda', type=str, default='0')
     parser.add_argument('--dataset', type=str, required=True)
     parser.add_argument('--preload', action='store_true', default=False)
+    parser.add_argument('--num_samples', type=int, default=-1)
+    parser.add_argument('--mask', type=str, default=None)
     args = parser.parse_args()
     modality, dataset_key = args.dataset.split(".")
     if modality == 'text':
@@ -127,14 +148,26 @@ def main():
         dataset_instance = getattr(OmniModality, dataset_key)
     else:
         raise ValueError("invalid modality")
-    
+    if args.mask is not None:
+        mask_config = args.mask.split(',')
+        tag = 'mask' + ''.join([m[0] for m in mask_config]) + '_'
+    else:
+        mask_config = None
+        tag = ''
+
     dataset = dataset_instance.load_unified(preload=args.preload)
+    if args.num_samples > 0:
+        import random
+        random.seed(42)
+        random.shuffle(dataset)
+        dataset = dataset[:args.num_samples]
     results = inference_omniguard(
         model_path=args.model_path,
         dataset=dataset,
         media_type=modality,
         # num_samples=10,
-        device=f'cuda:{args.cuda}'
+        device=f'cuda:{args.cuda}',
+        mask_modality=mask_config
     )
     # print(results[0]['result'])
 
@@ -144,7 +177,7 @@ def main():
 
     model_name = get_model_name(args.model_path)
     os.makedirs(os.path.join(args.output_dir, model_name), exist_ok=True)
-    output_file = os.path.join(args.output_dir, model_name, f"omniguard_{args.dataset}.jsonl")
+    output_file = os.path.join(args.output_dir, model_name, f"omniguard_{tag}{args.dataset}.jsonl")
     with open(output_file, 'w') as f:
         for res in results:
             f.write(json.dumps(res) + '\n')

@@ -39,6 +39,11 @@ class BaseLLM:
     
     def close(self):
         pass
+
+    def calculate_query_token_length(self, text):
+        assert self.processor is not None
+        tokenizer = self.processor.tokenizer if hasattr(self.processor, "tokenizer") else self.processor
+        return len(tokenizer.encode(text, add_special_tokens=False))
     
     def generate(self, messages, max_token=1024):
         raise NotImplementedError
@@ -441,11 +446,11 @@ class MiniCPM_o_4_5(BaseLLM):
     def _append_minicpm_content(self, item, prompt_parts, images, audios, audio_parts, msg_idx):
         if isinstance(item, Image.Image):
             images.append(item)
-            prompt_parts.append("<image>./</image>")
+            prompt_parts.append("(<image>./</image>)")
         elif isinstance(item, np.ndarray):
             audios.append(item)
             audio_parts.append(msg_idx)
-            prompt_parts.append("<audio>./</audio>")
+            prompt_parts.append("(<audio>./</audio>)")
         elif isinstance(item, str):
             prompt_parts.append(item)
         else:
@@ -464,7 +469,7 @@ class MiniCPM_o_4_5(BaseLLM):
                 self._append_minicpm_content(item, prompt_parts, input_images, input_audios, audio_parts, i)
             msg["content"] = "\n".join(prompt_parts) if not omni_mode else "".join(prompt_parts)
 
-        chat_tokenizer = self.processor.tokenizer if self.processor is not None else self.tokenizer
+        chat_tokenizer = self.processor.tokenizer if self.processor is not None and hasattr(self.processor, "tokenizer") else self.tokenizer
         prompt = chat_tokenizer.apply_chat_template(
             copy_msgs,
             tokenize=False,
@@ -574,7 +579,7 @@ class MiniCPM_o_4_5_vllm(MiniCPM_o_4_5):
             self.normalize_content = getattr(importlib.import_module(model_cls.__module__), "normalize_content")
         except Exception:
             self.normalize_content = None
-        return llm, None
+        return llm, tokenizer
 
     def close(self):
         m = self.model
@@ -729,6 +734,7 @@ class Phi4Multimodal(BaseLLM):
         prompt = self.processor.tokenizer.apply_chat_template(chat, tokenize=False, add_generation_prompt=True)
         # print(prompt)
         if prompt.endswith('<|endoftext|>'):
+            print("Warning! Encounter remove end of text", prompt)
             prompt = prompt.rstrip('<|endoftext|>')
         # if prompt.endswith(self.processor.tokenizer.eos_token):
         #     prompt = prompt[: -len(self.processor.tokenizer.eos_token)]
@@ -757,7 +763,8 @@ class Phi4Multimodal(BaseLLM):
             # if self.generation_config is not None:
             #     generation_kwargs["generation_config"] = self.generation_config
             with torch.inference_mode():
-                output_ids = self.model.generate(**inputs, max_new_tokens=max_token, do_sample=False, generation_config=self.generation_config, num_logits_to_keep=1)
+                output_ids = self.model.generate(**inputs, max_new_tokens=max_token, 
+                    do_sample=False, generation_config=self.generation_config, num_logits_to_keep=1)
             input_len = inputs["input_ids"].shape[1]
             generate_ids = output_ids[:, input_len:]
             response = self.processor.batch_decode(
@@ -798,7 +805,8 @@ class Phi4Multimodal_vllm(Phi4Multimodal):
             gpu_memory_utilization=0.8,
             max_model_len=32768,
             max_num_seqs=self.max_num_seqs,
-            limit_mm_per_prompt={"image": 16, "audio": 16},
+            # enforce_eager=True,
+            limit_mm_per_prompt={"image": 16, "audio": 32},
             seed=42,
         )
         self.tokenizer = tokenizer
@@ -819,6 +827,13 @@ class Phi4Multimodal_vllm(Phi4Multimodal):
             "multi_modal_data": {},
         }
         if len(images) > 0:
+            # resample images if necessary
+            for i, image in enumerate(images):
+                if isinstance(image, Image.Image):
+                    if image.width > 1024 or image.height > 1024:
+                        # resize image
+                        print("Warning! Encounter large image", image.size, "resized to <1024x1024")
+                        image.thumbnail((1024, 1024))
             inputs["multi_modal_data"]["image"] = images
         if len(audios) > 0:
             inputs["multi_modal_data"]["audio"] = [audio[0] if isinstance(audio, tuple) else audio for audio in audios]

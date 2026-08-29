@@ -288,7 +288,7 @@ prepare_safewatch_bench_mini() {
 
 prepare_omnicustom_bench_mini() {
   local target_dir="${DATA_DIR}/Omniguard_Custom"
-  local full_zip_path="${EXTERNAL_DIR}/Omni_Custom.zip"
+  local full_zip_path="${EXTERNAL_DIR}/Omni_Custom_v4.zip"
   local mini_zip_path="${EXTERNAL_DIR}/Omniguard_Custom_mini.zip"
 
   echo "[INFO] Preparing OmniCustom ..."
@@ -312,7 +312,7 @@ prepare_omnicustom_bench_mini() {
   echo "[ERROR] OmniCustom preparation failed:"
   echo "[ERROR]   - Full zip not found: ${full_zip_path}"
   echo "[ERROR]   - Mini zip not found: ${mini_zip_path}"
-  echo "[ERROR] Please provide Omni_Custom.zip (preferred) or Omniguard_Custom_mini.zip in ${EXTERNAL_DIR}/."
+  echo "[ERROR] Please provide Omni_Custom_v4.zip (preferred) or Omniguard_Custom_mini.zip in ${EXTERNAL_DIR}/."
   return 1
 }
 
@@ -350,6 +350,6 @@ prepare_omnicustom_bench_mini
 
 echo "[INFO] External datasets are prepared."
 
-# extract_labels_in_place
+extract_labels_in_place
 
 echo "[INFO] Labels resources are prepared."

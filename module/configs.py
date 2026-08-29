@@ -1,7 +1,6 @@
 import json
 import glob
 import math
-import librosa
 import torch
 
 from collections import Counter
@@ -28,23 +27,44 @@ class ConfigItem:
             policy = Policy() # default Policy, mapping every risk to UNK
         self.policy = policy
     
-    def load_unified(self, preload=True):
+    def load_unified(self, preload=True, llm=None, mask_config=None):
         # apply the initial risk mapping
         load_fns = self.load_fn if isinstance(self.load_fn, list) else [self.load_fn]
         dataset = []
+        mask_enable = mask_config is not None and llm is not None
+        if mask_config is None:
+            mask_config = {}
+        mask_word = mask_config.get('replace_word', 'mask')
 
         def preload_resource(item:dict):
+            if isinstance(item.get("txt", None), str) and mask_enable and mask_config.get('mask_txt', False):
+                # print(f"Masking text with length {len(item['txt'])}")
+                item['txt'] = ' '.join([mask_word] * llm.calculate_query_token_length(item['txt']))
             
             if preload and isinstance(item.get("img", None), str):
                 item["img"] = Image.open(item["img"]) # no need to convert RGB here
+                if mask_enable and mask_config.get('mask_img', False):
+                    # mask with a white color image with the same size
+                    # print(f"Masking image with white color, size={item['img'].size}")
+                    item['img'] = Image.new("RGB", item['img'].size, (255, 255, 255))
+
             
             # Video cannot be preloaded because the logic in process_mm_info only accepts video paths
             if preload and isinstance(item.get('video', None), str):
                 item['video'] = sample_fixed_frames_torch(item['video'], total_frames=12) # maximum up to 12 frames
+                if mask_enable and mask_config.get('mask_video', False):
+                    # mask video with a series of white color images in the same sizes
+                    # print(f"Masking video with white color, size={item['video'][0].size}")
+                    item['video'] = [Image.new("RGB", frame.size, (255, 255, 255)) for frame in item['video']]
 
             if preload and isinstance(item.get("audio", None), str):
+                import librosa
                 # TODO: use audio in video, extract the audio track from video
                 item['audio'] = librosa.load(item['audio'], sr=16000)[0]
+                if mask_enable and mask_config.get('mask_audio', False):
+                    # mask with silent audio signals
+                    # print(f"Masking audio with silent signals, shape={item['audio'].shape}")
+                    item['audio'] = np.zeros(item['audio'].shape)
             
             return item
 
@@ -119,20 +139,22 @@ class Splitable:
     def __init__(self, config: ConfigItem, 
                  train_split:Union[float, int]=1.0, 
                  test_split:Union[float, int]=-1,
-                 include_in_test:bool=True) -> None:
+                 include_in_test:bool=True,
+                 mask_config:dict=None) -> None:
         self.data_config = config
         self.embedding_file = None   # to be filled later
         self.risk_label_file = None  # to be filled later
         self.train_split = train_split
         self.test_split = test_split
         self.include_in_test = include_in_test
+        self.mask_config = mask_config
 
     
     def allowed_risks(self):
         return self.data_config.policy.allowed_risks
 
-    def load_unified(self, preload=True):
-        return self.data_config.load_unified(preload=preload)
+    def load_unified(self, preload=True, llm=None):
+        return self.data_config.load_unified(preload=preload, llm=llm, mask_config=self.mask_config)
 
     def key(self):
         return self.data_config.key

@@ -1,5 +1,4 @@
 import os
-import random
 os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 os.environ["NCCL_DEBUG"] = "warn"
 
@@ -38,6 +37,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--reload_llm_each_iter', action='store_true', default=False)
     parser.add_argument('--disable_sys', action='store_true', default=False)
+    parser.add_argument('--sample_limit', type=int, default=-1)
 
     args = parser.parse_args()
     
@@ -59,6 +59,9 @@ if __name__ == '__main__':
 
         # For False-Rejection to text short-cuts
         # "fr": eval_false_reject,
+
+        # For Modality Masking Evaluation
+        # "gh": eval_mask_all_exp
     }
     dataset_names_map = get_config_item_attributes(TextModality) \
         | get_config_item_attributes(VisionModality) \
@@ -77,13 +80,17 @@ if __name__ == '__main__':
         for config_name, dataset_instance in config_list.items():
             dataset_name = dataset_names_map[dataset_instance.data_config]
             print(f"{modality} - {dataset_name}")
-
-            dataset = dataset_instance.load_unified(preload=False)
-            dataset = random.sample(dataset, 10) # just for debug
-
+            
             if args.reload_llm_each_iter:
                 llm = load_llm(args.model_path, device=f"cuda:{args.cuda}", use_vllm=args.enable_vllm)
             
+            dataset = dataset_instance.load_unified(llm=llm)
+            if args.sample_limit > 0:
+                import random
+                random.seed(42)
+                random.shuffle(dataset)
+                dataset = dataset[:args.sample_limit]
+
             results = inference_omniguard_sft(llm, dataset, version=args.version, 
                                               report_detail=args.report_error, 
                                               batch_size=args.batch_size,
@@ -102,20 +109,23 @@ if __name__ == '__main__':
                     f.write(json.dumps(result) + '\n')
             
             metrics, _ = report_metrics(results, display=True)
-            metric_val = metrics['f1']
-            eval_results.append((f"{modality}.{dataset_name}", metric_val, valid_rate))
+            f1_val = metrics['f1']
+            accuracy_val = metrics['accuracy']
+            recall_val = metrics['recall']
+
+            eval_results.append((f"{modality}.{dataset_name}", f"Acc: {accuracy_val:.4f}, Recall: {recall_val:.4f}, F1: {f1_val:.4f} ({valid_rate:.2%})"))
             complete_eval_results.append((f"{modality}.{dataset_name}", metrics, valid_rate))
             # write to logging file
             with open(log_file_name, 'a') as f:
-                f.write(f"{modality}.{dataset_name}: {metric_val:.4f} ({valid_rate:.2%})\n")
+                f.write(f"{modality}.{dataset_name}: {f1_val:.4f} ({valid_rate:.2%})\n")
 
     if not args.reload_llm_each_iter:
         llm.close()
     
     # print overall eval results
     print("Overall F1 Results:")
-    for name, metric_val, valid_rate in eval_results:
-        print(f"{name}: {metric_val:.4f} ({valid_rate:.2%})")
+    for name, metric_str in eval_results:
+        print(f"{name}: {metric_str}")
     print("----------------")
 
     # print complete eval results

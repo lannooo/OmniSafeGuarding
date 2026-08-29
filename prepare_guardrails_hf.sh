@@ -1,23 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# One-click downloader for base OmniGuard models from Hugging Face.
+# One-click downloader for baseline guardrail models from Hugging Face.
 # Usage:
-#   bash prepare_base_models_hf.sh
-#   bash prepare_base_models_hf.sh /path/to/custom/model_dir
+#   bash prepare_guardrails_hf.sh
+#   bash prepare_guardrails_hf.sh /path/to/custom/model_dir
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MODEL_DIR="${1:-${ROOT_DIR}/models/base}"
+REPO_ROOT="$(cd "${ROOT_DIR}/.." && pwd)"
+MODEL_DIR="${1:-${REPO_ROOT}/models/guard}"
 
 # Model download options:
 # - Use [hfd] prefix to download with hfd.sh (if available and configured).
 # - Use [skip] prefix to skip downloading a model.
 MODEL_REPOS=(
-  "Qwen/Qwen2.5-Omni-3B",
-  "Qwen/Qwen2.5-Omni-7B",
-  # "Qwen/Qwen3-Omni-30B-A3B-Instruct",
-  # "openbmb/MiniCPM-o-4_5",
-  # "microsoft/Phi-4-multimodal-instruct",
+  # "Qwen/Qwen3Guard-Gen-8B",
+  # "openai/gpt-oss-safeguard-20b",
+  # "meta-llama/Llama-Guard-3-8B",
+  # "meta-llama/Llama-Guard-3-11B-Vision",
+  # "AIML-TUDA/LlavaGuard-v1.2-7B-OV-hf",
+  # "yueliu1999/GuardReasoner-VL-7B",
+  "zhu-thu-22/GuardReasoner-Omni-3B",
+  "zhu-thu-22/GuardReasoner-Omni-7B",
+  "anonymousICML/OmniGuard-3B",
+  "anonymousICML/OmniGuard-7B",
 )
 
 echo "[INFO] Target model directory: ${MODEL_DIR}"
@@ -29,7 +35,6 @@ if ! command -v hf >/dev/null 2>&1; then
 fi
 
 ensure_hf_login() {
-  # Prefer non-interactive auth when HF_TOKEN is provided.
   if [[ -n "${HF_TOKEN:-}" ]]; then
     echo "[INFO] HF_TOKEN detected. Logging in to Hugging Face CLI ..."
     hf auth login --token "${HF_TOKEN}" >/dev/null
@@ -48,10 +53,10 @@ ensure_hf_login() {
 download_one_model() {
   local repo_id="$1"
   local target_dir="$2"
-  local method="$3"  # hf | hfd
+  local method="$3"
 
-  if [[ "${method}" == "hfd" && -f "${ROOT_DIR}/hfd.sh" ]]; then
-    bash "${ROOT_DIR}/hfd.sh" "${repo_id}" --local-dir "${target_dir}"
+  if [[ "${method}" == "hfd" && -f "${REPO_ROOT}/hfd.sh" ]]; then
+    bash "${REPO_ROOT}/hfd.sh" "${repo_id}" --local-dir "${target_dir}"
   else
     hf download "${repo_id}" --local-dir "${target_dir}"
   fi
@@ -118,4 +123,4 @@ for raw_entry in "${MODEL_REPOS[@]}"; do
   download_model_with_retry "${repo_id}" "${target_dir}" "${method}"
 done
 
-echo "[INFO] Base models are ready."
+echo "[INFO] Baseline models are ready."

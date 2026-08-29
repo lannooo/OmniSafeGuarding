@@ -58,7 +58,7 @@ The following mini datasets may be missing in anonymous repo releases,
 (too large and are managed via Git LFS). They are disabled in default evaluation configs; after preparing local data, uncomment related eval sets.:
 - `data/external/JailBreakV-28k-mini.zip`
 - `data/external/MML-SafeBench.zip`
-- `data/external/Omniguard_Custom_mini.zip`: download from anonymous Zenodo (https://zenodo.org/records/19999112) and place under `data/external/`
+- `data/external/Omniguard_Custom_mini.zip`: download from anonymous Zenodo (https://zenodo.org/records/22157542) and place under `data/external/`
 
 
 For dataset-specific issues and access reminders (HF terms/login), see [BENCHMARKS.md](BENCHMARKS.md).
