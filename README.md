@@ -1,6 +1,6 @@
-# OmGuard
+# Omni-modal Safety Guardrail
 
-The official repository of "Unified Yet Fragile? Uncovering the Cross-modal Pitfalls of Omni-Modal Safety Guardrails". This study the modality bias issue in omni-model safety moderation and propose an enhanced guardrail implementation **OmGuard**, which achieve superior cross-modal query moderation performance.
+This repository provides a omni-model safety moderation framework aiming to enhance guardrail performance under cross-modal queries. 
 
 > [!CAUTION]
 > Harmful Content Disclaimer: This project involves safety benchmarks that may contain harmful, disturbing, or offensive examples. These data are provided strictly for safety research and guardrail development.
@@ -135,13 +135,13 @@ Merging LoRa adapter weights:
 
 ```bash
 bash ms-swift/finetune/sft_lora_merge.sh <ckpt-path> <base-model-path>
-# e.g., merge our OmGuard weights with Qwen2.5-Omni-7B 
+# e.g., merge our guardrail weights with Qwen2.5-Omni-7B 
 bash ms-swift/finetune/sft_lora_merge.sh ms-swift/ckpt/OmGuard-Qwen25-7B-Enhance-lora-adapter models/base/Qwen2.5-Omni-7B
 # move the merged model, give it a name containing Qwen25, e.g.,
 mv ms-swift/ckpt/OmGuard-Qwen25-7B-Enhance-lora-adapter_merged models/guard/OmGuard-Qwen25-7B-Enhance
 ```
 
-Now we can benchmark the merged fine-tuned OmGuard model:
+Now we can benchmark the merged fine-tuned guardrail model:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python eval_omniguard_sft_all.py \
@@ -240,7 +240,6 @@ Before running, make sure the following paths in the script are correct for your
 
 After fine-tuning, you can obtain your own Guard model through the same merge step, and re-run them for benchmarking!
 
-
 ## Alternative Metric Reproduction
 
 There are two clear reproduction paths.
@@ -274,7 +273,6 @@ modalities = ["Image"]
 ```
 
 - Run the notebook cell to regenerate metric tables from intermediate outputs.
-
 
 ## License & Usage
 

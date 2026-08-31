@@ -307,6 +307,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # https://api.xiaomimimo.com/v1
-    # sk-csesmt33x4c9bvwx3fml3w2a5zegl2ggfyc5jqkkzxyhtugc
     sys.exit(main())
